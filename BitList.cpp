@@ -3,6 +3,7 @@
 #include <fstream>
 #include <sstream>
 #include <cmath>
+#include <hash_map>
 #include <algorithm>
 #include "BitList.h"
 
@@ -99,23 +100,6 @@ void build_graph_from_subNodeList(Graph &graph, vector<SubNode> &subNodeList, in
     fs.close();
 }
 
-BitNumber mergeBitNum(vector<BitNumber> &bitVec, int cnt, int mergeSize)
-{
-    BitNumber newNum;
-    newNum.did = bitVec[0].colId / mergeSize;
-    //we can use colId to recover subList
-    newNum.colId = bitVec[cnt - 1].colId;
-    newNum.eid = 0;
-    newNum.weight = 0;
-    for(int i = 0; i < cnt; i++)
-    {
-        newNum.eid <<= GRANUITY;
-        newNum.eid |= bitVec[i].eid;
-        newNum.weight += bitVec[i].weight;
-    }
-    return newNum;
-}
-
 int cmp(SubNode a, SubNode b)
 {
     if(a.rowId < b.rowId){
@@ -136,31 +120,34 @@ void reorder_subNodeList_merge_bitNumber(const vector<int> &iDx, vector<SubNode>
             bit->colId = iDx[bit->colId];
 			fs << sit->rowId + 1 << " " << bit->colId + 1 << " " << bit->weight << endl;
         }
-        sit->bitList.sort();
-        BitList mergedList;
-        int mergeCnt = BASE_NUM / GRANUITY;
-        int cnt = (int)sit->bitList.size() / mergeCnt;
-        vector<BitNumber> bitVec(mergeCnt);
-        BitList::iterator bit = sit->bitList.begin();
-        for(int i = 0; i < cnt; i++){
-            for(int j = 0; j < mergeCnt; j++, ++bit){
-                bitVec[j] = *bit;
-            }
-            BitNumber bitNum = mergeBitNum(bitVec, mergeCnt, mergeCnt);
-            mergedList.push_back(bitNum);
-        }
-        if((int)sit->bitList.size() % mergeCnt > 0){
-            for(int j = 0; j < (int)sit->bitList.size() % mergeCnt; j++, ++bit){
-                bitVec[j] = *bit;
-            }
-            BitNumber bitNum = mergeBitNum(bitVec, (int)sit->bitList.size() % mergeCnt, mergeCnt);
-            mergedList.push_back(bitNum);
-        }
+		//no need to sort actually
+        //sit->bitList.sort();
+		BitList mergedList;
+		BitList::iterator bit = sit->bitList.begin();
+		map<int, BitNumber> bitNumberCollector;
+		for(;bit != sit->bitList.end(); ++bit){
+			int newColId = bit->colId / (BASE_NUM / GRANUITY);
+			int gNum = bit->colId % (BASE_NUM / GRANUITY);
+			if(bitNumberCollector.find(newColId) != bitNumberCollector.end()){
+				bitNumberCollector[newColId].eid |= (bit->eid << ((BASE_NUM / GRANUITY - 1 - gNum) * GRANUITY));
+			}
+			else{
+				BitNumber bNum;
+				bNum.did = newColId * BASE_NUM;
+				bNum.colId = newColId;
+				bNum.eid = bit->eid << ((BASE_NUM / GRANUITY - 1 - gNum) * GRANUITY);
+				bitNumberCollector[newColId] = bNum;
+			}
+		}
+		for(map<int, BitNumber>::iterator mit = bitNumberCollector.begin(); mit != bitNumberCollector.end(); ++mit){
+			mergedList.push_back(mit->second);
+		}
         sit->bitList = mergedList;
     }
     sort(subNodeList.begin(), subNodeList.end(), cmp);
 	fs.close();
 }
+
 
 int countNonZeroBit(int x)
 {

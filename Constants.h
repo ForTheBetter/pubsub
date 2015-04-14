@@ -5,7 +5,7 @@
 //Low bound for the number of attribute in a subscription;
 static int SUB_SIZE_LB = 1;
 //Up bound for the number of attribute in a subscription;
-static int SUB_SIZE_UB = 3;
+static int SUB_SIZE_UB = 2;
 //Count of subscriptions;
 static int SUB_CNT = 20000;
 //Count of events;
@@ -13,7 +13,7 @@ static int EVENT_CNT = 20000;
 //Low bound for the number of attribute in an event;
 static int EVENT_SIZE_LB = 1;
 //Up bound for the number of attribute in a event;
-static int EVENT_SIZE_UB = 20;
+static int EVENT_SIZE_UB = 2;
 //Count of attributes;
 static int ATTR_CNT = 200;
 //FIX ME: different attributes have size in different orders of magnitude;

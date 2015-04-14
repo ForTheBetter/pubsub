@@ -25,6 +25,35 @@ void recursive_match(int did, int eid, int attrId, int row, int depth, vector<Su
     }
 }
 
+void event_match_ground_truth(Event &e, SubList &subList)
+{
+	cout << "Ground truth:" << endl;
+	for(SubList::iterator sit = subList.begin(); sit != subList.end(); ++sit){
+		int matchPred = 0;
+		bool noBreak = true;
+		for(list<AttrRange>::iterator ait = sit->attrList.begin(); noBreak && ait != sit->attrList.end(); ++ait){
+			noBreak = false;
+			for(list<AttrVal>::iterator vit = e.attrList.begin(); vit != e.attrList.end(); ++vit){
+				if(ait->attrId == vit->attrId){
+					for(list<Interval>::iterator iit = ait->intervalList.begin(); iit != ait->intervalList.end(); ++iit){
+						if(iit->left <= vit->value && iit->right >= vit->value){
+							noBreak = true;
+							matchPred++;
+							break;
+						}
+					}
+					break;
+				}
+			}
+		}
+		if(matchPred == sit->attrCnt){
+			Subscription subView = *sit;
+			Event eventView = e;
+			cout << "Subscription #" << sit->subId << " is matched!" << endl;
+		}
+	}
+}
+
 void event_match(EventList &eventList, SubList &subList, vector<vector<int> > &iDxVec, vector<SubIndex> &hierachicalIndex)
 {
     for(EventList::iterator eit = eventList.begin(); eit != eventList.end(); ++eit){
@@ -33,15 +62,18 @@ void event_match(EventList &eventList, SubList &subList, vector<vector<int> > &i
         for(list<AttrVal>::iterator ait = eit->attrList.begin(); ait != eit->attrList.end(); ++ait){
             int attrId = ait->attrId, colId = ait->value / GRANUITY, pos = ait->value % GRANUITY;
             int gNum = iDxVec[attrId][colId] % (BASE_NUM / GRANUITY);
-            int did = iDxVec[attrId][colId] / (BASE_NUM / GRANUITY), eid = 1 << ((BASE_NUM / GRANUITY - 1 - gNum) * GRANUITY + (GRANUITY - 1 - pos));
+			int did = iDxVec[attrId][colId] / (BASE_NUM / GRANUITY) * BASE_NUM, eid = 1 << ((BASE_NUM / GRANUITY - 1 - gNum) * GRANUITY + (GRANUITY - 1 - pos));
             for(int row = 0; row < (int)hierachicalIndex[0][attrId].size(); row++){
                 recursive_match(did, eid, attrId, row, 0, hierachicalIndex, subHitTime);
             }
         }
         for(map<int, int>::iterator hit = subHitTime.begin(); hit != subHitTime.end(); ++hit){
             if(hit->second == subList[hit->first].attrCnt){
+				Subscription subView = subList[hit->first];
+				Event eventView = *eit;
                 cout << "Subscription #" << hit->first << " is matched!" << endl;
             }
         }
+		event_match_ground_truth(*eit, subList);
     }
 }
