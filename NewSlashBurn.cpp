@@ -102,7 +102,6 @@ void extractGcc(Graph &graph, vector<int> &gccindr, vector<int> &gccindc, vector
 	}
 	sort(ccMetric.begin(), ccMetric.end());
 	//Update spoke
-	int rtmp = rpos, dtmp = dpos;
 	for(int i = 1; i < cid; i++){
 		int mCid = ccMetric[i].second;
 		for(vector<pair<int, int>>::iterator it = ccVertex[mCid].begin(); it != ccVertex[mCid].end(); ++it){
@@ -165,5 +164,10 @@ pair<vector<int>, vector<int>> newSlashBurn(Graph &graph, int K)
 		//Find gcc and update spoke position
 		extractGcc(graph, gccindr, gccindc, idxr, idxc, upos, lpos, dpos, rpos, gccsize);
 	}
-	return make_pair(idxr, idxc);
+	vector<int> id2xr(n, 0), id2xc(n, 0);
+	for(int i = 0; i < n; i++){
+		id2xr[idxr[i]] = i;
+		id2xc[idxc[i]] = i;
+	}
+	return make_pair(id2xr, id2xc);
 }
