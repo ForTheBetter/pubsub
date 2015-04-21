@@ -2,7 +2,7 @@
 #define BITLIST_H_INCLUDED
 
 #include "DataGenerator.h"
-#include "GraphUtil.h"
+#include "NewSlashBurn.h"
 
 using namespace std;
 
@@ -41,7 +41,7 @@ void build_subIndex_from_subList(SubIndex &idx, SubList &subList);
 
 void build_graph_from_subNodeList(Graph &graph, vector<SubNode> &subNodeList, int attrId);
 
-void reorder_subNodeList_merge_bitNumber(const vector<int> &iDx, vector<SubNode> &subNodeList, int attrId);
+void reorder_subNodeList_merge_bitNumber(const pair<vector<int>, vector<int>> &iDx, vector<SubNode> &subNodeList, int attrId);
 
 void rebuild_subIndex_after_slashBurn(SubIndex &initIdx, vector<vector<int> > &iDxVec);
 

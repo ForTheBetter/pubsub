@@ -31,6 +31,25 @@ int select_biggest(vector<int> &weightsum, vector<int> &xId, int st, int ed)
     return maxloc;
 }
 
+vector<int> select_topk(vector<int> &weightsum, vector<int> &xId, int st, int ed, int k)
+{
+    int maxloc = 0, maxval = -1;
+	vector<pair<int, int> > copy;
+	vector<int> result;
+	for(int i = st; i < ed; i++){
+		pair<int, int> pair;
+		pair.first = weightsum[xId[i]];
+		pair.second = i;
+		copy.push_back(pair);
+	}
+	sort(copy.begin(), copy.end());
+	vector<pair<int, int> >::iterator it = copy.end() - 1;
+	for(int i = 0; i < k; i++, --it){
+		result.push_back(it->second);
+	}
+    return result;
+}
+
 void remove_vertex_from_graph(Graph &graph, int vid, vector<int> &weightsum)
 {
     for(map<int, int>::iterator it = graph[vid].edgeTo.begin(); it != graph[vid].edgeTo.end(); ++it){
@@ -43,7 +62,7 @@ void remove_vertex_from_graph(Graph &graph, int vid, vector<int> &weightsum)
     }
 }
 
-int cmp(Tuple a, Tuple b)
+int cmp_TKDE(Tuple a, Tuple b)
 {
     if(a.second < b.second){
         return 1;
@@ -57,11 +76,21 @@ int cmp(Tuple a, Tuple b)
     return 0;
 }
 
-int sort_vertex(vector<int> &newx2X, vector<int> &vertexGCC, vector<pair<int, int> > &ccMetric)
+int cmp_ICDM(Tuple a, Tuple b)
+{
+    if(a.third < b.third){
+        return 0;
+    }
+    else{
+        return 1;
+    }
+}
+
+int sort_vertex(vector<int> &newx2X, vector<int> &vertexCC, vector<pair<int, int> > &ccMetric)
 {
     int vp = 0;
     vector<Tuple> tupleVec;
-    for(vector<int>::iterator it = vertexGCC.begin(); it != vertexGCC.end(); ++it, vp++){
+    for(vector<int>::iterator it = vertexCC.begin(); it != vertexCC.end(); ++it, vp++){
         if(*it){
             Tuple tmp;
             tmp.first = vp;
@@ -70,7 +99,12 @@ int sort_vertex(vector<int> &newx2X, vector<int> &vertexGCC, vector<pair<int, in
             tupleVec.push_back(tmp);
         }
     }
-    sort(tupleVec.begin(), tupleVec.end(), cmp);
+	if(TKDE){
+		sort(tupleVec.begin(), tupleVec.end(), cmp_TKDE);
+	}
+	else{
+		sort(tupleVec.begin(), tupleVec.end(), cmp_ICDM);
+	}
     int Q = tupleVec[0].third;
     if(Q < SLASHBURN_K){
         return -1;
@@ -152,13 +186,25 @@ vector<int> slashBurn(Graph &graph, int K)
     }
     calcWeightSum(weightsum, graph);
     while(q - p + 1 > K){
-        for(int i = 0; i < K; i++, p++){
-            int maxloc = select_biggest(weightsum, xId, p, q);
-            remove_vertex_from_graph(graph, xId[maxloc], weightsum);
-            iter_swap(idX.begin() + xId[p], idX.begin() + xId[maxloc]);
-            iter_swap(xId.begin() + maxloc, xId.begin() + p);
-        }
-        //Map or vector, trade-off between space and time
+		if(TKDE){
+        /* TKDE: select topK in greedy way */
+			for(int i = 0; i < K; i++, p++){
+				int maxloc = select_biggest(weightsum, xId, p, q);
+				remove_vertex_from_graph(graph, xId[maxloc], weightsum);
+				iter_swap(idX.begin() + xId[p], idX.begin() + xId[maxloc]);
+				iter_swap(xId.begin() + maxloc, xId.begin() + p);
+			}
+		}
+		else{
+		/* ICDM: select topK directly */
+			vector<int> maxloc = select_topk(weightsum, xId, p, q, K);
+			for(vector<int>::iterator it = maxloc.begin(); it != maxloc.end(); ++it, p++){
+				remove_vertex_from_graph(graph, xId[*it], weightsum);
+				iter_swap(idX.begin() + xId[p], idX.begin() + xId[*it]);
+				iter_swap(xId.begin() + *it, xId.begin() + p);
+			}
+		}
+		//Map or vector, trade-off between space and time
         vector<int> vertexCC(graph.size(), 0);
         vector<pair<int, int> > ccMetric(graph.size());
         find_cc(graph, p, q, xId, idX, vertexCC, ccMetric);

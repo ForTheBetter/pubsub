@@ -76,8 +76,8 @@ void rebuild_subIndex_after_slashBurn(SubIndex &initIdx, vector<vector<int> > &i
         int gSize = max((int) it->second.size(), (int) ceil(1.0 * ATTR_SIZE / GRANUITY));
         Graph graph(gSize);
         build_graph_from_subNodeList(graph, it->second, attrId);
-        vector<int> iDx = slashBurn(graph, SLASHBURN_K);
-        iDxVec.push_back(iDx);
+		pair<vector<int>, vector<int>> iDx = newSlashBurn(graph, SLASHBURN_K);
+		iDxVec.push_back(iDx.second);
         reorder_subNodeList_merge_bitNumber(iDx, it->second, attrId);
     }
 }
@@ -108,16 +108,16 @@ int cmp(SubNode a, SubNode b)
     return 0;
 }
 
-void reorder_subNodeList_merge_bitNumber(const vector<int> &iDx, vector<SubNode> &subNodeList, int attrId)
+void reorder_subNodeList_merge_bitNumber(const pair<vector<int>, vector<int>>  &iDx, vector<SubNode> &subNodeList, int attrId)
 {
 	stringstream ss;
     ss << "graphs\\attr_" << attrId << "_slashburn_graph.txt";
     string fileName; ss >> fileName;
     fstream fs(fileName, std::ios::out);
     for(vector<SubNode>::iterator sit = subNodeList.begin(); sit != subNodeList.end(); ++sit){
-        sit->rowId = iDx[sit->rowId];
+		sit->rowId = iDx.first[sit->rowId];
         for(BitList::iterator bit = sit->bitList.begin(); bit != sit->bitList.end(); ++bit){
-            bit->colId = iDx[bit->colId];
+			bit->colId = iDx.second[bit->colId];
 			fs << sit->rowId + 1 << " " << bit->colId + 1 << " " << bit->weight << endl;
         }
 		//no need to sort actually
