@@ -11,7 +11,7 @@ int main()
     EventList eventList;
     SubList subList;
     cout << "--------------------------Data Generator-----------------------------" << endl;
-    data_generate(eventList, subList);
+    data_generate_discrete_zipf(eventList, subList);
     //--------------------------Build Initial bitlist----------------------
     SubIndex initIdx;
     cout << "--------------------------Build Initial bitlist----------------------" << endl;
