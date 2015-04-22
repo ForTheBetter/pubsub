@@ -23,7 +23,7 @@ typedef list<BitNumber> BitList;
 
 class SubNode{
 public:
-    int subId, rowId;
+    int subId, rowId, minAttrCnt;
     BitList bitList;
     bool operator < (SubNode b)
     {
@@ -45,6 +45,6 @@ void reorder_subNodeList_merge_bitNumber(const pair<vector<int>, vector<int>> &i
 
 void rebuild_subIndex_after_slashBurn(SubIndex &initIdx, vector<vector<int> > &iDxVec);
 
-void build_hierachical_index(SubIndex &initIdx, vector<SubIndex> &hierachicalIndexList);
+void build_hierachical_index(SubIndex &initIdx, vector<SubIndex> &hierachicalIndex);
 
 #endif // BITLIST_H_INCLUDED

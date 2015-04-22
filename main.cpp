@@ -21,7 +21,7 @@ int main()
     vector<vector<int> > iDxVec;
     rebuild_subIndex_after_slashBurn(initIdx, iDxVec);
     //--------------------------Build Hierachical Index--------------------
-    vector<SubIndex> hierachicalIndex;
+	vector<SubIndex> hierachicalIndex;
     cout << "--------------------------Build Hierachical Index--------------------" << endl;
     build_hierachical_index(initIdx, hierachicalIndex);
     //--------------------------Event Match--------------------------------

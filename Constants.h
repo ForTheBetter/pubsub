@@ -26,7 +26,7 @@ static int ATTR_INTERVAL_CNT_UB = 5;
 static int GRANUITY = 10;
 static int BASE_NUM = 30;
 static int SLASHBURN_K = 2;
-static float DEFAULT_INTERVAL_FACTOR = 0.0005f;
+static float DEFAULT_INTERVAL_FACTOR = 0.005f;
 static float HIERCHICAL_THRESHOLD = 0.5f;
 static int TKDE = 1;
 

@@ -28,6 +28,7 @@ void build_subIndex_from_subList(SubIndex &idx, SubList &subList)
         for(;ait != sit->attrList.end(); ++ait){
             SubNode newNode;
             newNode.subId = sit->subId;
+			newNode.minAttrCnt = sit->attrCnt;
             list<Interval>::iterator iit = ait->intervalList.begin();
             //FIX ME: first map is redundant
             map<int, int> bitNumWeight;
@@ -167,6 +168,7 @@ bool mergeSubNode(SubNode &a, SubNode &b, SubNode &c)
     c.rowId = a.rowId;
     //we can use subId to judge if it is combined by two subNodes
     c.subId = 1;
+	c.minAttrCnt = min(a.minAttrCnt, b.minAttrCnt);
     BitList::iterator it_a = a.bitList.begin(), it_b = b.bitList.begin();
     while(it_a != a.bitList.end() && it_b != b.bitList.end()){
         if(it_a->did == it_b->did){
@@ -209,7 +211,7 @@ bool mergeSubNode(SubNode &a, SubNode &b, SubNode &c)
 void build_hierachical_index(SubIndex &initIdx, vector<SubIndex> &hierachicalIndex)
 {
     bool isFull = false;
-    hierachicalIndex.push_back(initIdx);
+	hierachicalIndex.push_back(initIdx);
     while(!isFull){
         cout << hierachicalIndex.size() << endl;
         SubIndex lastIndex = hierachicalIndex[0];
@@ -220,6 +222,7 @@ void build_hierachical_index(SubIndex &initIdx, vector<SubIndex> &hierachicalInd
                 if(i == (int)sit->second.size() - 1){
                     mergedNode = sit->second[i];
                     mergedNode.subId = 0;
+					mergedNode.minAttrCnt = sit->second[i].minAttrCnt;
                 }
                 else{
                     bool full = mergeSubNode(sit->second[i], sit->second[i + 1], mergedNode);
