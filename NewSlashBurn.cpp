@@ -49,7 +49,7 @@ void remove_vertex_from_graph(Graph &graph, int vid, int dir)
 	}
 }
 
-void findCC(Graph &graph, map<pair<int, int>, int> &vertexCC, map<int, vector<pair<int, int>>> &ccVertex, vector<pair<int, int>> &ccMetric, int vid, int cid, int dir)
+void findCC(Graph &graph, map<pair<int, int>, int> &vertexCC, map<int, vector<pair<int, int> > > &ccVertex, vector<pair<int, int> > &ccMetric, int vid, int cid, int dir)
 {
 	pair<int, int> vertex = make_pair(dir, vid);
 	if(vertexCC[vertex]){
@@ -78,8 +78,8 @@ void extractGcc(Graph &graph, vector<int> &gccindr, vector<int> &gccindc, vector
 {
 	int cid = 1;
 	map<pair<int, int>, int> vertexCC;
-	map<int, vector<pair<int, int>>> ccVertex;
-	vector<pair<int, int>> ccMetric(2, make_pair(0, 1));
+	map<int, vector<pair<int, int> > > ccVertex;
+	vector<pair<int, int> > ccMetric(2, make_pair(0, 1));
 	for(int i = 0; i < (int)gccindr.size(); i++){
 		if(gccindr[i] == -1){
 			continue;
@@ -104,7 +104,7 @@ void extractGcc(Graph &graph, vector<int> &gccindr, vector<int> &gccindc, vector
 	//Update spoke
 	for(int i = 1; i < cid; i++){
 		int mCid = ccMetric[i].second;
-		for(vector<pair<int, int>>::iterator it = ccVertex[mCid].begin(); it != ccVertex[mCid].end(); ++it){
+		for(vector<pair<int, int> >::iterator it = ccVertex[mCid].begin(); it != ccVertex[mCid].end(); ++it){
 			if(it->first == ROW){
 				idxr[dpos--] = it->second;
 				remove_vertex_from_graph(graph, it->second, ROW);
@@ -119,7 +119,7 @@ void extractGcc(Graph &graph, vector<int> &gccindr, vector<int> &gccindc, vector
 	gccindr.clear(); gccindc.clear();
 	int mCid = ccMetric[(int)ccMetric.size() - 1].second;
 	gccsize = ccMetric[(int)ccMetric.size() - 1].first;
-	for(vector<pair<int, int>>::iterator it = ccVertex[mCid].begin(); it != ccVertex[mCid].end(); ++it){
+	for(vector<pair<int, int> >::iterator it = ccVertex[mCid].begin(); it != ccVertex[mCid].end(); ++it){
 		if(it->first == ROW){
 			gccindr.push_back(it->second);
 			idxr[upos++] = it->second;
@@ -131,7 +131,7 @@ void extractGcc(Graph &graph, vector<int> &gccindr, vector<int> &gccindc, vector
 	}
 }
 
-pair<vector<int>, vector<int>> newSlashBurn(Graph &graph, int K)
+pair<vector<int>, vector<int> > newSlashBurn(Graph &graph, int K)
 {
 	int gccsize = 0;
 	int niter = 0;

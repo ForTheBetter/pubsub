@@ -33,7 +33,7 @@ int select_biggest(vector<int> &weightsum, vector<int> &xId, int st, int ed)
 
 vector<int> select_topk(vector<int> &weightsum, vector<int> &xId, int st, int ed, int k)
 {
-    int maxloc = 0, maxval = -1;
+    //int maxloc = 0, maxval = -1;
 	vector<pair<int, int> > copy;
 	vector<int> result;
 	for(int i = st; i < ed; i++){
@@ -178,7 +178,7 @@ void printGraph(Graph &graph)
 vector<int> slashBurn(Graph &graph, int K)
 {
 	//printGraph(graph);
-    int p = 0, q = graph.size() - 1;
+    int p = 0, q = (int)graph.size() - 1;
     vector<int> weightsum(q + 1, 0);
     vector<int> idX(q + 1, 0), xId(q + 1, 0);
     for(int i = 0; i < q + 1; i++){

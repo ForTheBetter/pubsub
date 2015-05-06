@@ -12,7 +12,7 @@ public:
 class AttrRange{
 public:
     int attrId, intervalCnt;
-    std::list<Interval> intervalList;
+    std::vector<Interval> intervalList;
 };
 
 class AttrVal{
@@ -23,13 +23,13 @@ public:
 class Subscription{
 public:
     int subId, attrCnt;
-    std::list<AttrRange> attrList;
+    std::vector<AttrRange> attrList;
 };
 
 class Event{
 public:
     int eventId, attrCnt;
-    std::list<AttrVal> attrList;
+    std::vector<AttrVal> attrList;
 };
 
 #endif // BASICSTRUCTURE_H_INCLUDED

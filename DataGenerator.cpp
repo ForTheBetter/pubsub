@@ -2,7 +2,6 @@
 #include <ctime>
 #include <cstdlib>
 #include <map>
-#include <hash_map>
 #include "DataGenerator.h"
 #include "genzipf.h"
 
@@ -42,7 +41,7 @@ void event_generate_interval_uniform(EventList &eventList)
             attrval.value = pick_value(0, ATTR_SIZE - 1);
             newEvent.attrList.push_back(attrval);
         }
-        eventList.push_back(newEvent);
+        eventList[i] = newEvent;
     }
 }
 
@@ -68,13 +67,22 @@ void sub_generate_interval_uniform(SubList &subList)
                 Interval interval;
                 int st = k * (ATTR_SIZE / numOfInterval);
                 int ed = (k + 1) * (ATTR_SIZE / numOfInterval) - 1;
-                pick_interval(st, ed, DEFAULT_INTERVAL_FACTOR);
-                interval.left = st, interval.right = ed;
+                int mid = pick_value(st, ed);
+				double roll = rand() * 1.0 / RAND_MAX;
+				if(roll < EQ_RATIO){
+					interval.left = mid, interval.right = mid;
+				}
+				else if(roll < (1 - EQ_RATIO) / 2){
+					interval.left = st, interval.right = mid;
+				}
+				else{
+					interval.left = mid, interval.right = ed;
+				}
                 attrRange.intervalList.push_back(interval);
             }
             newSub.attrList.push_back(attrRange);
         }
-        subList.push_back(newSub);
+        subList[i] = newSub;
     }
 }
 
@@ -104,7 +112,7 @@ void event_generate_discrete_zipf(EventList &eventList)
             attrval.value = pick_value(0, ATTR_SIZE - 1);
             newEvent.attrList.push_back(attrval);
         }
-        eventList.push_back(newEvent);
+        eventList[i]  = newEvent;
     }
 }
 
@@ -139,7 +147,7 @@ void sub_generate_discrete_zipf(SubList &subList)
             }
             newSub.attrList.push_back(attrRange);
         }
-        subList.push_back(newSub);
+        subList[i] = newSub;
     }
 }
 
@@ -148,4 +156,20 @@ void data_generate_discrete_zipf(EventList &eventList, SubList &subList)
 	srand((unsigned int) time(0));
     event_generate_discrete_zipf(eventList);
     sub_generate_discrete_zipf(subList);
+}
+
+void release_extra_memory(EventList &eventList, SubList &subList)
+{
+    for(int i = 0; i < (int) subList.size(); i++){
+       vector<AttrRange> tmp(subList[i].attrList.begin(), subList[i].attrList.end());
+       subList[i].attrList.swap(tmp);
+       for(int j = 0; j < (int) subList[i].attrList.size(); j++){
+           vector<Interval> tmpI(subList[i].attrList[j].intervalList.begin(), subList[i].attrList[j].intervalList.end());
+           subList[i].attrList[j].intervalList.swap(tmpI);
+       }
+    }
+    for(int i = 0; i < (int) eventList.size(); i++){
+       vector<AttrVal> tmp(eventList[i].attrList.begin(), eventList[i].attrList.end());
+       eventList[i].attrList.swap(tmp);
+    }
 }

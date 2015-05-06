@@ -3,7 +3,6 @@
 #include <fstream>
 #include <sstream>
 #include <cmath>
-#include <hash_map>
 #include <algorithm>
 #include "BitList.h"
 
@@ -24,12 +23,12 @@ void build_subIndex_from_subList(SubIndex &idx, SubList &subList)
 {
     SubList::iterator sit = subList.begin();
     for(;sit != subList.end(); ++sit){
-        list<AttrRange>::iterator ait = sit->attrList.begin();
+        vector<AttrRange>::iterator ait = sit->attrList.begin();
         for(;ait != sit->attrList.end(); ++ait){
             SubNode newNode;
             newNode.subId = sit->subId;
 			newNode.minAttrCnt = sit->attrCnt;
-            list<Interval>::iterator iit = ait->intervalList.begin();
+            vector<Interval>::iterator iit = ait->intervalList.begin();
             //FIX ME: first map is redundant
             map<int, int> bitNumWeight;
             map<int, int> bitNumCollector;
@@ -63,42 +62,65 @@ void build_subIndex_from_subList(SubIndex &idx, SubList &subList)
                 bitNum.weight = bitNumWeight[bit->first];
                 newNode.bitList.push_back(bitNum);
             }
-            newNode.rowId = idx[ait->attrId].size();
-            idx[ait->attrId].push_back(newNode);
+            newNode.rowId = (int)idx[ait->attrId].size();
+			idx[ait->attrId].push_back(newNode);
         }
     }
 }
 
 void rebuild_subIndex_after_slashBurn(SubIndex &initIdx, vector<vector<int> > &iDxVec)
 {
-    for(SubIndex::iterator it = initIdx.begin(); it != initIdx.end(); ++it){
+    /*for(SubIndex::iterator it = initIdx.begin(); it != initIdx.end(); ++it){
         int attrId = it->first;
+		#ifdef OPEN_ALL_STREAMS
         cout << attrId << endl;
+		#endif //OPEN_ALL_STREAMS
         int gSize = max((int) it->second.size(), (int) ceil(1.0 * ATTR_SIZE / GRANUITY));
         Graph graph(gSize);
         build_graph_from_subNodeList(graph, it->second, attrId);
 		pair<vector<int>, vector<int>> iDx = newSlashBurn(graph, SLASHBURN_K);
-		iDxVec.push_back(iDx.second);
+		iDxVec[attrId] = iDx.second;
         reorder_subNodeList_merge_bitNumber(iDx, it->second, attrId);
+    }*/
+	for(int attrId = 0; attrId < ATTR_CNT; attrId++){
+
+		#ifdef OPEN_ALL_STREAMS
+        cout << attrId << endl;
+		#endif //OPEN_ALL_STREAMS
+		if(initIdx[attrId].empty()){
+			continue;
+		}
+		int gSize = max((int) initIdx[attrId].size(), (int) ceil(1.0 * ATTR_SIZE / GRANUITY));
+        Graph graph(gSize);
+        build_graph_from_subNodeList(graph, initIdx[attrId], attrId);
+		pair<vector<int>, vector<int> > iDx = newSlashBurn(graph, SLASHBURN_K);
+        reorder_subNodeList_merge_bitNumber(iDx, initIdx[attrId], attrId);
+        iDxVec[attrId].swap(iDx.second);
     }
 }
 
 void build_graph_from_subNodeList(Graph &graph, vector<SubNode> &subNodeList, int attrId)
 {
+	#ifdef OPEN_ALL_STREAMS
     stringstream ss;
     ss << "graphs\\attr_" << attrId << "_origin_graph.txt";
     string fileName; ss >> fileName;
     fstream fs(fileName, std::ios::out);
+	#endif //OPEN_ALL_STREAMS
     for(vector<SubNode>::iterator sit = subNodeList.begin(); sit != subNodeList.end(); ++sit){
         for(BitList::iterator bit = sit->bitList.begin(); bit != sit->bitList.end(); ++bit){
+			#ifdef OPEN_ALL_STREAMS
             fs << sit->rowId + 1 << " " << bit->colId + 1 << " " << bit->weight << endl;
+			#endif //OPEN_ALL_STREAMS
             graph[sit->rowId].vid = sit->rowId;
             graph[bit->colId].vid = bit->colId;
             graph[sit->rowId].edgeTo[bit->colId] = bit->weight;
             graph[bit->colId].edgeFrom[sit->rowId] = bit->weight;
         }
     }
+	#ifdef OPEN_ALL_STREAMS
     fs.close();
+	#endif //OPEN_ALL_STREAMS
 }
 
 int cmp(SubNode a, SubNode b)
@@ -109,17 +131,21 @@ int cmp(SubNode a, SubNode b)
     return 0;
 }
 
-void reorder_subNodeList_merge_bitNumber(const pair<vector<int>, vector<int>>  &iDx, vector<SubNode> &subNodeList, int attrId)
+void reorder_subNodeList_merge_bitNumber(const pair<vector<int>, vector<int> >  &iDx, vector<SubNode> &subNodeList, int attrId)
 {
+	#ifdef OPEN_ALL_STREAMS
 	stringstream ss;
     ss << "graphs\\attr_" << attrId << "_slashburn_graph.txt";
     string fileName; ss >> fileName;
     fstream fs(fileName, std::ios::out);
+	#endif // OPEN_ALL_STREAMS
     for(vector<SubNode>::iterator sit = subNodeList.begin(); sit != subNodeList.end(); ++sit){
 		sit->rowId = iDx.first[sit->rowId];
         for(BitList::iterator bit = sit->bitList.begin(); bit != sit->bitList.end(); ++bit){
 			bit->colId = iDx.second[bit->colId];
+			#ifdef OPEN_ALL_STREAMS
 			fs << sit->rowId + 1 << " " << bit->colId + 1 << " " << bit->weight << endl;
+			#endif // OPEN_ALL_STREAMS
         }
 		//no need to sort actually
         //sit->bitList.sort();
@@ -146,7 +172,9 @@ void reorder_subNodeList_merge_bitNumber(const pair<vector<int>, vector<int>>  &
         sit->bitList = mergedList;
     }
     sort(subNodeList.begin(), subNodeList.end(), cmp);
+	#ifdef OPEN_ALL_STREAMS
 	fs.close();
+	#endif // OPEN_ALL_STREAMS
 }
 
 
@@ -211,12 +239,19 @@ bool mergeSubNode(SubNode &a, SubNode &b, SubNode &c)
 void build_hierachical_index(SubIndex &initIdx, vector<SubIndex> &hierachicalIndex)
 {
     bool isFull = false;
-	hierachicalIndex.push_back(initIdx);
+    SubIndex tmpIdx;
+	hierachicalIndex.push_back(tmpIdx);
+	hierachicalIndex[0].swap(initIdx);
     while(!isFull){
+		#ifdef OPEN_ALL_STREAM
         cout << hierachicalIndex.size() << endl;
+		#endif //OPEN_ALL_STREAM
+		if((int)hierachicalIndex.size() >= HIERCHICAL_LEVEL_UB){
+			break;
+		}
         SubIndex lastIndex = hierachicalIndex[0];
-        SubIndex newIndex;
-        for(SubIndex::iterator sit = lastIndex.begin(); sit != lastIndex.end(); ++sit){
+		SubIndex newIndex(ATTR_CNT + 1);
+        /*for(SubIndex::iterator sit = lastIndex.begin(); sit != lastIndex.end(); ++sit){
             for(int i = 0; i < (int)sit->second.size(); i += 2){
                 SubNode mergedNode;
                 if(i == (int)sit->second.size() - 1){
@@ -235,7 +270,62 @@ void build_hierachical_index(SubIndex &initIdx, vector<SubIndex> &hierachicalInd
             if((int) sit->second.size() == 1){
                 isFull = true;
             }
+        }*/
+		for(int attrId = 0; attrId < (int)lastIndex.size(); attrId++){
+            for(int i = 0; i < (int)lastIndex[attrId].size(); i += 2){
+                SubNode mergedNode;
+                if(i == (int)lastIndex[attrId].size() - 1){
+                    mergedNode = lastIndex[attrId][i];
+                    mergedNode.subId = 0;
+					mergedNode.minAttrCnt = lastIndex[attrId][i].minAttrCnt;
+                }
+                else{
+                    bool full = mergeSubNode(lastIndex[attrId][i], lastIndex[attrId][i + 1], mergedNode);
+                    isFull = isFull ? isFull : full;
+                }
+                newIndex[attrId].push_back(mergedNode);
+            }
+        }
+        for(int attrId = 0; attrId < (int)newIndex.size(); attrId++){
+			if((int) newIndex[attrId].size() == 1){
+                isFull = true;
+            }
         }
         hierachicalIndex.insert(hierachicalIndex.begin(), newIndex);
     }
+}
+
+unsigned int estimateSize(vector<SubIndex> &hierachicalIdx)
+{
+	unsigned int tot = sizeof(hierachicalIdx);
+	for(int i = 0; i < (int) hierachicalIdx.size(); i++){
+		tot += sizeof(hierachicalIdx[i]);
+		/*for(SubIndex::iterator mit = hierachicalIdx[i].begin(); mit != hierachicalIdx[i].end(); ++mit){
+			vector<SubNode> tmp(mit->second.begin(), mit->second.end());
+			mit->second.swap(tmp);
+			tot += sizeof(mit->second);
+			for(int j = 0; j < (int)mit->second.size(); j++){
+				vector<BitNumber> tmp(mit->second[j].bitList.begin(), mit->second[j].bitList.end());
+				mit->second[j].bitList.swap(tmp);
+				tot += sizeof(mit->second[j]);
+				for(BitList::iterator bit = mit->second[j].bitList.begin(); bit != mit->second[j].bitList.end(); ++bit){
+					tot += sizeof(*bit);
+				}
+			}
+		}*/
+		for(int attrId = 0; attrId < (int)hierachicalIdx[i].size(); ++attrId){
+			vector<SubNode> tmp(hierachicalIdx[i][attrId].begin(), hierachicalIdx[i][attrId].end());
+			hierachicalIdx[i][attrId].swap(tmp);
+			tot += sizeof(hierachicalIdx[i][attrId]);
+			for(int j = 0; j < (int)hierachicalIdx[i][attrId].size(); j++){
+				vector<BitNumber> tmp(hierachicalIdx[i][attrId][j].bitList.begin(), hierachicalIdx[i][attrId][j].bitList.end());
+				hierachicalIdx[i][attrId][j].bitList.swap(tmp);
+				tot += sizeof(hierachicalIdx[i][attrId][j]);
+				for(BitList::iterator bit = hierachicalIdx[i][attrId][j].bitList.begin(); bit != hierachicalIdx[i][attrId][j].bitList.end(); ++bit){
+					tot += sizeof(*bit);
+				}
+			}
+		}
+	}
+	return tot;
 }

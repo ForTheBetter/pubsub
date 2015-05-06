@@ -19,4 +19,6 @@ void sub_generate_discrete_zipf(SubList &subList);
 
 void data_generate_discrete_zipf(EventList &eventList, SubList &subList);
 
+void release_extra_memory(EventList &eventList, SubList &subList);
+
 #endif // DATAGENERATOR_H_INCLUDED

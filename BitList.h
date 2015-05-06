@@ -19,7 +19,7 @@ public:
     }
 };
 
-typedef list<BitNumber> BitList;
+typedef vector<BitNumber> BitList;
 
 class SubNode{
 public:
@@ -35,16 +35,18 @@ public:
     }
 };
 
-typedef map<int, vector<SubNode>> SubIndex;
+typedef vector<vector<SubNode> > SubIndex;
 
 void build_subIndex_from_subList(SubIndex &idx, SubList &subList);
 
 void build_graph_from_subNodeList(Graph &graph, vector<SubNode> &subNodeList, int attrId);
 
-void reorder_subNodeList_merge_bitNumber(const pair<vector<int>, vector<int>> &iDx, vector<SubNode> &subNodeList, int attrId);
+void reorder_subNodeList_merge_bitNumber(const pair<vector<int>, vector<int> > &iDx, vector<SubNode> &subNodeList, int attrId);
 
 void rebuild_subIndex_after_slashBurn(SubIndex &initIdx, vector<vector<int> > &iDxVec);
 
 void build_hierachical_index(SubIndex &initIdx, vector<SubIndex> &hierachicalIndex);
+
+unsigned int estimateSize(vector<SubIndex> &hierachicalIdx);
 
 #endif // BITLIST_H_INCLUDED
