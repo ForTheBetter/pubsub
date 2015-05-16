@@ -3,6 +3,7 @@
 
 //#define OPEN_ALL_STREAMS
 //#define RAND_MAX 0x7fffffff;
+#include <vector>
 //Low bound for the number of attribute in a subscription;
 extern int SUB_SIZE_LB;
 //Up bound for the number of attribute in a subscription;
@@ -28,8 +29,9 @@ extern int ATTR_INTERVAL_CNT_UB;
 extern int ATTR_VAL_CNT_LB;
 //Up bound for the number of values in one attribute in one predicate;
 extern int ATTR_VAL_CNT_UB;
-extern int GRANUITY;
+extern int GRANULARITY;
 extern int BASE_NUM;
+extern int MAGNITUDE;
 extern int SLASHBURN_K;
 extern float DEFAULT_INTERVAL_FACTOR;
 extern float HIERCHICAL_THRESHOLD;
@@ -37,5 +39,9 @@ extern int HIERCHICAL_LEVEL_UB;
 extern double ZIPF_EXPONENT_NUMBER; //0.1, 0.2, 0.6, 0.8, 1.0, 2.0, 3.0
 extern int TKDE;
 extern double EQ_RATIO;
+extern int ORDER_BY_SIZE;
+extern int SLASHBURN_GRAPH_WIDTH;
+extern int MASK;
+extern std::vector<int> LEVEL;
 
 #endif // CONSTANTS_H_INCLUDED

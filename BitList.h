@@ -21,32 +21,28 @@ public:
 
 typedef vector<BitNumber> BitList;
 
-class SubNode{
+class Node{
 public:
-    int subId, rowId, minAttrCnt;
+    int wordId, rowId;
     BitList bitList;
-    bool operator < (SubNode b)
+    bool operator < (Node b)
     {
         return this->rowId < b.rowId;
     }
-    bool operator > (SubNode b)
+    bool operator > (Node b)
     {
         return this->rowId > b.rowId;
     }
 };
 
-typedef vector<vector<SubNode> > SubIndex;
+typedef vector<vector<Node> > SubIndex;
 
-void build_subIndex_from_subList(SubIndex &idx, SubList &subList);
+void build_subIndex_from_subList(SubIndex &subIndex, SubList &subList, vector<pair<int, int> > &attrList);
 
-void build_graph_from_subNodeList(Graph &graph, vector<SubNode> &subNodeList, int attrId);
+void rebuild_subIndex_after_slashBurn(SubIndex &initIdx, vector<pair<vector<int>, vector<int> > > &idxVec);
 
-void reorder_subNodeList_merge_bitNumber(const pair<vector<int>, vector<int> > &iDx, vector<SubNode> &subNodeList, int attrId);
+void build_hierarchical_index(SubIndex &initIdx);
 
-void rebuild_subIndex_after_slashBurn(SubIndex &initIdx, vector<vector<int> > &iDxVec);
-
-void build_hierachical_index(SubIndex &initIdx, vector<SubIndex> &hierachicalIndex);
-
-unsigned int estimateSize(vector<SubIndex> &hierachicalIdx);
+unsigned int estimateSize(SubIndex &index);
 
 #endif // BITLIST_H_INCLUDED

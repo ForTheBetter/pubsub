@@ -1,5 +1,8 @@
 #include <iostream>
 #include <fstream>
+#include <cmath>
+#include <queue>
+#include <algorithm>
 #include "EventMatch.h"
 
 using namespace std;
@@ -8,29 +11,29 @@ using namespace std;
 fstream fs_truth("match_truth.txt", std::ios::out), fs_result("match_result.txt", std::ios::out);
 #endif //OPEN_ALL_STREAMS
 
-void recursive_match(int did, int eid, int attrId, int row, int depth, int eventSize, vector<SubIndex> &hierachicalIndex, map<int, int> &subHitTime)
+bool event_sub_match_truth(Event &e, Subscription &sub)
 {
-    if(row > (int)hierachicalIndex[depth][attrId].size() - 1)
-        return;
-	if(eventSize < hierachicalIndex[depth][attrId][row].minAttrCnt){
-		return;
+	int matchPred = 0;
+	bool noBreak = true;
+	for(vector<AttrRange>::iterator ait = sub.attrList.begin(); noBreak && ait != sub.attrList.end(); ++ait){
+		noBreak = false;
+		for(vector<AttrVal>::iterator vit = e.attrList.begin(); vit != e.attrList.end(); ++vit){
+			if(ait->attrId == vit->attrId){
+				for(vector<Interval>::iterator iit = ait->intervalList.begin(); iit != ait->intervalList.end(); ++iit){
+					if(iit->left <= vit->value && iit->right >= vit->value){
+						noBreak = true;
+						matchPred++;
+						break;
+					}
+				}
+				break;
+			}
+		}
 	}
-    for(BitList::iterator bit = hierachicalIndex[depth][attrId][row].bitList.begin(); bit != hierachicalIndex[depth][attrId][row].bitList.end(); ++bit){
-        if(bit->did == did){
-            if(bit->eid & eid){
-                if(depth == (int)hierachicalIndex.size() - 1){
-                    subHitTime[hierachicalIndex[depth][attrId][row].subId]++;
-                }
-                else{
-                    recursive_match(did, eid, attrId, 2 * row, depth + 1, eventSize, hierachicalIndex, subHitTime);
-                    recursive_match(did, eid, attrId, 2 * row + 1, depth + 1, eventSize, hierachicalIndex, subHitTime);
-                }
-            }
-        }
-        else if(bit->did > did){
-            break;
-        }
-    }
+	if(matchPred == sub.attrCnt){
+		return true;
+	}
+	return false;
 }
 
 void event_match_ground_truth(Event &e, SubList &subList)
@@ -39,26 +42,7 @@ void event_match_ground_truth(Event &e, SubList &subList)
 	cout << "Ground truth:" << endl;
 	#endif //OPEN_ALL_STREAMS
 	for(SubList::iterator sit = subList.begin(); sit != subList.end(); ++sit){
-		int matchPred = 0;
-		bool noBreak = true;
-		for(vector<AttrRange>::iterator ait = sit->attrList.begin(); noBreak && ait != sit->attrList.end(); ++ait){
-			noBreak = false;
-			for(vector<AttrVal>::iterator vit = e.attrList.begin(); vit != e.attrList.end(); ++vit){
-				if(ait->attrId == vit->attrId){
-					for(vector<Interval>::iterator iit = ait->intervalList.begin(); iit != ait->intervalList.end(); ++iit){
-						if(iit->left <= vit->value && iit->right >= vit->value){
-							noBreak = true;
-							matchPred++;
-							break;
-						}
-					}
-					break;
-				}
-			}
-		}
-		if(matchPred == sit->attrCnt){
-			Subscription subView = *sit;
-			Event eventView = e;
+		if(event_sub_match_truth(e, *sit)){
 			#ifdef OPEN_ALL_STREAMS
 			cout << "Subscription #" << sit->subId << " is matched!" << endl;
 			fs_truth << "Subscription #" << sit->subId << " is matched!" << endl;
@@ -67,7 +51,7 @@ void event_match_ground_truth(Event &e, SubList &subList)
 	}
 }
 
-void event_match(EventList &eventList, SubList &subList, vector<vector<int> > &iDxVec, vector<SubIndex> &hierachicalIndex)
+void event_match(EventList &eventList, SubList &subList, vector<pair<int, int> > &attrList, vector<pair<vector<int>, vector<int> > > &iDxVec, SubIndex &index)
 {
     for(EventList::iterator eit = eventList.begin(); eit != eventList.end(); ++eit){
         #ifdef OPEN_ALL_STREAMS
@@ -76,28 +60,79 @@ void event_match(EventList &eventList, SubList &subList, vector<vector<int> > &i
 		fs_result << "Match Event#" << eit->eventId << endl;
 		#endif //OPEN_ALL_STREAMS
 		int eventSize = eit->attrCnt;
-        map<int, int> subHitTime;
-        for(vector<AttrVal>::iterator ait = eit->attrList.begin(); ait != eit->attrList.end(); ++ait){
-            int attrId = ait->attrId, colId = ait->value / GRANUITY, pos = ait->value % GRANUITY;
-			if((int)iDxVec.size() < attrId || iDxVec[attrId].empty()){
-				continue;
+		int maxsz = ORDER_BY_SIZE ? SUB_SIZE_UB : 1;
+		for(int sz = 0; sz < min(eventSize, maxsz); sz++){
+			int nonEmptyListCnt = 0;
+			map<int, int> combinedList;
+			vector<pair<int, int> > mapping(eventSize);
+			vector<int> curEntry(eventSize);
+			for(int ait = 0; ait < eventSize; ait++){
+				int wordId;
+				if(MAGNITUDE < attrList[eit->attrList[ait].attrId].second){
+					wordId = attrList[eit->attrList[ait].attrId].first + eit->attrList[ait].value / ((int)ceil(1.0 * attrList[eit->attrList[ait].attrId].second / MAGNITUDE));
+				}
+				else{
+					wordId = attrList[eit->attrList[ait].attrId].first + eit->attrList[ait].value;
+				}
+				int rowId = iDxVec[sz].first[wordId] / BASE_NUM;//wordId / BASE_NUM;
+				//int offset = (BASE_NUM - 1 - wordId % BASE_NUM) * BASE_NUM;
+				int offset = (BASE_NUM - 1 - iDxVec[sz].first[wordId] % BASE_NUM) * BASE_NUM;
+				for(int i = 1; i < LEVEL[sz]; i++){
+					rowId /= 2;
+				}
+				if(!index[sz][rowId].bitList.empty()){	
+					mapping[nonEmptyListCnt].first = rowId;
+					mapping[nonEmptyListCnt].second = offset;
+					curEntry[nonEmptyListCnt++] = 0;
+				}
 			}
-            int gNum = iDxVec[attrId][colId] % (BASE_NUM / GRANUITY);
-			int did = iDxVec[attrId][colId] / (BASE_NUM / GRANUITY) * BASE_NUM, eid = 1 << ((BASE_NUM / GRANUITY - 1 - gNum) * GRANUITY + (GRANUITY - 1 - pos));
-			for(int row = 0; row < (int)hierachicalIndex[0][attrId].size(); row++){
-				recursive_match(did, eid, attrId, row, 0, eventSize, hierachicalIndex, subHitTime);
-            }
-        }
-        for(map<int, int>::iterator hit = subHitTime.begin(); hit != subHitTime.end(); ++hit){
-            if(hit->second == subList[hit->first].attrCnt){
-				Subscription subView = subList[hit->first];
-				Event eventView = *eit;
-				#ifdef OPEN_ALL_STREAMS
-                cout << "Subscription #" << hit->first << " is matched!" << endl;
-				fs_result << "Subscription #" << hit->first << " is matched!" << endl;
-				#endif //OPEN_ALL_STREAMS
-            }
-        }
+			if(nonEmptyListCnt > sz){
+				vector<pair<int, pair<int, int> > > sortedList;
+				for(int i = 0; i < nonEmptyListCnt; i++){
+					sortedList.push_back(make_pair(index[sz][mapping[i].first].bitList[curEntry[i]].colId, make_pair(i, (index[sz][mapping[i].first].bitList[curEntry[i]].eid >> mapping[i].second) & MASK)));
+				}
+				make_heap(sortedList.begin(), sortedList.end());
+				while(1){
+					int firstElem = sortedList[0].second.first;
+					if(sortedList[0].first == sortedList[sz].first){
+						combinedList[sortedList[0].first] = sortedList[0].second.second;
+						for(int i = 1; i <= sz; i++){
+							combinedList[sortedList[0].first] &= sortedList[i].second.second;
+						}
+					}
+					if(curEntry[firstElem] < (int)index[sz][mapping[firstElem].first].bitList.size() - 1){
+						curEntry[firstElem]++;
+						pop_heap(sortedList.begin(), sortedList.end());
+						sortedList.pop_back();
+						sortedList.push_back(make_pair(index[sz][mapping[firstElem].first].bitList[curEntry[firstElem]].colId, make_pair(firstElem, (index[sz][mapping[firstElem].first].bitList[curEntry[firstElem]].eid >> mapping[firstElem].second) & MASK)));
+						push_heap(sortedList.begin(), sortedList.end());
+					}
+					else{
+						curEntry[firstElem] = -1;
+						nonEmptyListCnt--;
+						pop_heap(sortedList.begin(), sortedList.end());
+						sortedList.pop_back();
+					}
+					if(nonEmptyListCnt <= sz){
+						break;
+					}
+				}
+				for(map<int, int>::iterator p = combinedList.begin(); p != combinedList.end(); ++p){
+					int eid = p->second, gNum = BASE_NUM - 1;
+					while(eid){
+						if(eid & 0x1){
+							int subId = iDxVec[sz].second[p->first * BASE_NUM + gNum];
+							#ifdef OPEN_ALL_STREAMS
+							cout << "Subscription #" << subId << " is matched!" << endl;
+							fs_result << "Subscription #" << subId << " is matched!" << endl;
+							#endif //OPEN_ALL_STREAMS
+						}
+						gNum--;
+						eid >>= 1;
+					}
+				}
+			}
+		}
 		//event_match_ground_truth(*eit, subList);
     }
 	#ifdef OPEN_ALL_STREAMS

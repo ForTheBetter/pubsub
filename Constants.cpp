@@ -14,7 +14,6 @@ int EVENT_SIZE_LB = 1;
 int EVENT_SIZE_UB = 20; //20, 40, 60, 80, 100, 120
 //Count of attributes;
 int ATTR_CNT = 2000; //20000
-//FIX ME: different attributes have size in different orders of magnitude;
 //Count of value in an attribute;
 int ATTR_SIZE = 20000; //50, 200, 800, 3200, 12800
 //Low bound for the number of interval in one attribute in one predicate;
@@ -25,12 +24,17 @@ int ATTR_INTERVAL_CNT_UB = 1;
 int ATTR_VAL_CNT_LB = 1;
 //Up bound for the number of values in one attribute in one predicate;
 int ATTR_VAL_CNT_UB = 10;
-int GRANUITY = 10;
-int BASE_NUM = 30;
+int GRANULARITY = 10;
+int BASE_NUM = 5;
+int MAGNITUDE = ~(0u) >> 1;//100; //10;
 int SLASHBURN_K = 1;
 float DEFAULT_INTERVAL_FACTOR = 0.0005f;
 float HIERCHICAL_THRESHOLD = 0.5f;
-int HIERCHICAL_LEVEL_UB = 2;
+int HIERCHICAL_LEVEL_UB = 1;
 double ZIPF_EXPONENT_NUMBER = 1.0; //0.1, 0.2, 0.6, 0.8, 1.0, 2.0, 3.0
 int TKDE = 1;
 double EQ_RATIO = 0.8;
+int ORDER_BY_SIZE = 1;
+int SLASHBURN_GRAPH_WIDTH = 10000;
+int MASK = 0x11111;
+std::vector<int> LEVEL;

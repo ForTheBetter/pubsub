@@ -24,13 +24,48 @@ void calcWeightSum(vector<pair<int, int> > &weightsum, Graph &graph, vector<int>
 	}
 }
 
+int pair_cmp_1(pair<int, int> &a, pair<int, int> &b)
+{
+	if(a.first > b.first){
+		return 1;
+	}
+	else if(a.first < b.first){
+		return 0;
+	}
+	else{
+		if(a.second < b.second){
+			return 1;
+		}
+		else{
+			return 0;
+		}
+	}
+}
+
+int pair_cmp_2(pair<int, int> &a, pair<int, int> &b)
+{
+	if(a.first < b.first){
+		return 1;
+	}
+	else if(a.first > b.first){
+		return 0;
+	}
+	else{
+		if(a.second > b.second){
+			return 1;
+		}
+		else{
+			return 0;
+		}
+	}
+}
+
 vector<int> select_topk(vector<pair<int, int> > &weightsum, int k)
 {
 	vector<int> result;
-	sort(weightsum.begin(), weightsum.end());
-	vector<pair<int, int> >::iterator iter = weightsum.end() - 1;
-	for(int i = 0; i < k; i++, --iter){
-		result.push_back(iter->second);
+	sort(weightsum.begin(), weightsum.end(), pair_cmp_1);
+	for(int i = 0; i < k; i++){
+		result.push_back(weightsum[i].second);
 	}
     return result;
 }
@@ -79,7 +114,8 @@ void extractGcc(Graph &graph, vector<int> &gccindr, vector<int> &gccindc, vector
 	int cid = 1;
 	map<pair<int, int>, int> vertexCC;
 	map<int, vector<pair<int, int> > > ccVertex;
-	vector<pair<int, int> > ccMetric(2, make_pair(0, 1));
+	vector<pair<int, int> > ccMetric(2);
+	ccMetric[1] = make_pair(0, 1); ccMetric[0] = make_pair(0, 0);
 	for(int i = 0; i < (int)gccindr.size(); i++){
 		if(gccindr[i] == -1){
 			continue;
@@ -100,10 +136,13 @@ void extractGcc(Graph &graph, vector<int> &gccindr, vector<int> &gccindc, vector
 			ccMetric.push_back(make_pair(0, cid));
 		}
 	}
-	sort(ccMetric.begin(), ccMetric.end());
+	sort(ccMetric.begin(), ccMetric.end(), pair_cmp_2);
 	//Update spoke
 	for(int i = 1; i < cid; i++){
 		int mCid = ccMetric[i].second;
+		if(!mCid){
+			continue;
+		}
 		for(vector<pair<int, int> >::iterator it = ccVertex[mCid].begin(); it != ccVertex[mCid].end(); ++it){
 			if(it->first == ROW){
 				idxr[dpos--] = it->second;
@@ -143,7 +182,10 @@ pair<vector<int>, vector<int> > newSlashBurn(Graph &graph, int K)
     }
 
 	while(niter == 0 || gccsize > K){
-		niter = niter + 1;
+	    niter = niter + 1;
+		#ifdef OPEN_ALL_STREAMS
+		cout << niter << endl;
+		#endif // OPEN_ALL_STREAMS
 		//Select hub and update hub position
 		int m = (int)gccindr.size(), n = (int)gccindc.size();
 		vector<pair<int, int> > weightsum(m + n, make_pair(0, 0));
@@ -163,7 +205,7 @@ pair<vector<int>, vector<int> > newSlashBurn(Graph &graph, int K)
 		}
 		//Find gcc and update spoke position
 		extractGcc(graph, gccindr, gccindc, idxr, idxc, upos, lpos, dpos, rpos, gccsize);
-	}
+    }
 	vector<int> id2xr(n, 0), id2xc(n, 0);
 	for(int i = 0; i < n; i++){
 		id2xr[idxr[i]] = i;
